@@ -1,0 +1,41 @@
+openapi: 3.0.3
+info:
+  title: Interasis BFF Health Contract
+  version: 1.0.0
+  description: Contrato minimo de disponibilidade operacional para o bootstrap inicial do BFF.
+paths:
+  /health:
+    get:
+      summary: Verifica se o BFF esta online
+      operationId: getHealthStatus
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Servico online e respondendo.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatusResponse'
+              examples:
+                online:
+                  summary: Exemplo de resposta online
+                  value:
+                    status: Interasis Server Online
+                    timestamp: '2026-04-22T14:00:00.000Z'
+components:
+  schemas:
+    HealthStatusResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          description: Texto fixo que confirma disponibilidade do servico.
+          example: Interasis Server Online
+        timestamp:
+          type: string
+          format: date-time
+          description: Instante da consulta gerado no momento da requisicao.
