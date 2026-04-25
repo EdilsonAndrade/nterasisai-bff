@@ -19,6 +19,17 @@ import { memoryStorage } from 'multer';
 import { Response } from 'express';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
+  ApiBadGatewayResponse,
+  ApiBadRequestResponse,
+  ApiBody,
+  ApiConsumes,
+  ApiForbiddenResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiTooManyRequestsResponse,
+} from '@nestjs/swagger';
+import {
   ProcessChatRequestDto,
   ProcessChatResponseDto,
 } from '../../application/dto';
@@ -31,6 +42,7 @@ import {
 } from '../../infrastructure/config';
 import { ChatThrottlerExceptionFilter } from './chat-throttler-exception.filter';
 
+@ApiTags('Chat')
 @Controller('chat')
 @UseGuards(ThrottlerGuard)
 @UseFilters(ChatThrottlerExceptionFilter)
@@ -43,6 +55,58 @@ export class ChatController {
 
   @Post('message')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Processar mensagem multimodal de chat',
+    description:
+      'Encaminha texto e/ou audio do usuario para o AI Engine, validando origem, autenticacao interna e limites de uso.',
+  })
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiBody({
+    description:
+      'Payload do chat. Pode ser enviado como JSON (`application/json`) com `text`/`internalSecret` ou como `multipart/form-data` incluindo um arquivo de audio no campo `audio`.',
+    schema: {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          maxLength: 4000,
+          description:
+            'Conteudo textual da mensagem do usuario. Pelo menos um entre `text` ou `audio` deve ser informado.',
+          example: 'Ola, pode me ajudar a contratar uma proposta?',
+        },
+        audio: {
+          type: 'string',
+          format: 'binary',
+          description:
+            'Arquivo de audio multipart com a mensagem falada do usuario.',
+        },
+        internalSecret: {
+          type: 'string',
+          description:
+            'Segredo interno opcional usado por chamadas servidor-a-servidor; clientes finais nao devem informar.',
+        },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Mensagem aceita e encaminhada ao AI Engine.',
+    type: ProcessChatResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'Requisicao rejeitada por validacao de payload.',
+    type: ProcessChatResponseDto,
+  })
+  @ApiForbiddenResponse({
+    description: 'Origem nao permitida pela politica de CORS interna.',
+    type: ProcessChatResponseDto,
+  })
+  @ApiTooManyRequestsResponse({
+    description: 'Limite de chamadas por janela atingido.',
+  })
+  @ApiBadGatewayResponse({
+    description: 'Falha ao se comunicar com o AI Engine.',
+    type: ProcessChatResponseDto,
+  })
   @Throttle({
     default: {
       limit: 10,

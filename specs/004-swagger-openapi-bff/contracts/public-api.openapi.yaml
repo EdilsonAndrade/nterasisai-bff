@@ -1,0 +1,102 @@
+openapi: 3.0.3
+info:
+  title: Interasis AI - BFF API
+  version: 1.0.0
+  description: Contrato publico principal do BFF para saude e chat, usado como referencia da documentacao Swagger.
+paths:
+  /health:
+    get:
+      summary: Retorna status de disponibilidade do servico
+      operationId: getHealthStatus
+      tags:
+        - Health
+      responses:
+        '200':
+          description: Servico online
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+  /chat/message:
+    post:
+      summary: Recebe payload de chat e retorna status de processamento
+      operationId: postChatMessage
+      tags:
+        - Chat
+      requestBody:
+        required: false
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ProcessChatRequest'
+      responses:
+        '200':
+          description: Requisicao processada com sucesso
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessChatResponse'
+        '400':
+          description: Requisicao rejeitada por payload invalido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessChatResponse'
+        '403':
+          description: Origem bloqueada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessChatResponse'
+        '502':
+          description: Falha no upstream de IA
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessChatResponse'
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - timestamp
+      properties:
+        status:
+          type: string
+          example: Interasis Server Online
+        timestamp:
+          type: string
+          format: date-time
+    ProcessChatRequest:
+      type: object
+      properties:
+        text:
+          type: string
+          maxLength: 4000
+          example: Ola, pode me ajudar com uma proposta?
+        audio:
+          type: string
+          format: binary
+        internalSecret:
+          type: string
+          description: Campo opcional para chamadas internas.
+      description: Pelo menos um entre text ou audio deve ser enviado.
+    ProcessChatResponse:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - completed
+            - rejected
+            - failed
+            - blocked
+        correlationId:
+          type: string
+        message:
+          type: string
+        reason:
+          type: string

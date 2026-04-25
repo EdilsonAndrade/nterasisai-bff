@@ -1,0 +1,130 @@
+openapi: 3.0.3
+info:
+  title: Interasis AI Engine Response Contract
+  version: 1.0.0
+  description: Contrato interno versionado entre BFF e AI Engine para resposta multimodal e sinalizacao de cache/lead.
+paths:
+  /internal/v1/chat/message:
+    post:
+      summary: Processa mensagem do BFF e retorna resposta multimodal estruturada
+      operationId: processChatMessageInternal
+      tags:
+        - AI Engine Internal
+      parameters:
+        - in: header
+          name: X-Internal-Secret
+          required: true
+          schema:
+            type: string
+          description: Credencial interna enviada exclusivamente pelo BFF.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIEngineRequest'
+      responses:
+        '200':
+          description: Resposta processada com sucesso.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIEngineResponse'
+        '401':
+          description: Credencial interna ausente ou invalida.
+        '422':
+          description: Payload fora do contrato interno.
+        '503':
+          description: Servico de IA indisponivel.
+components:
+  schemas:
+    AIEngineRequest:
+      type: object
+      required:
+        - requestId
+      properties:
+        requestId:
+          type: string
+        sessionId:
+          type: string
+        text:
+          type: string
+          nullable: true
+        audio:
+          type: object
+          nullable: true
+          properties:
+            mimeType:
+              type: string
+            contentBase64:
+              type: string
+      description: Pelo menos um entre `text` e `audio` deve estar presente.
+    AIEngineResponse:
+      type: object
+      required:
+        - requestId
+        - status
+      properties:
+        requestId:
+          type: string
+        status:
+          type: string
+          enum:
+            - completed
+            - failed
+        output:
+          type: object
+          nullable: true
+          properties:
+            text:
+              type: string
+              nullable: true
+            audio:
+              type: object
+              nullable: true
+              required:
+                - mimeType
+                - contentBase64
+              properties:
+                mimeType:
+                  type: string
+                contentBase64:
+                  type: string
+                durationMs:
+                  type: integer
+                  minimum: 1
+            cacheControl:
+              type: object
+              required:
+                - cacheable
+              properties:
+                cacheable:
+                  type: boolean
+                maxAgeSeconds:
+                  type: integer
+                  minimum: 0
+                reason:
+                  type: string
+                  nullable: true
+            leadCapture:
+              type: object
+              nullable: true
+              required:
+                - captured
+              properties:
+                captured:
+                  type: boolean
+                name:
+                  type: string
+                  nullable: true
+                company:
+                  type: string
+                  nullable: true
+        error:
+          type: object
+          nullable: true
+          properties:
+            code:
+              type: string
+            message:
+              type: string

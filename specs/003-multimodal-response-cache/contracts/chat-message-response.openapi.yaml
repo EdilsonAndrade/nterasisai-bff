@@ -1,0 +1,130 @@
+openapi: 3.0.3
+info:
+  title: Interasis BFF Chat Response Contract
+  version: 1.0.0
+  description: Contrato publico de resposta multimodal do BFF para o frontend com diretivas de cache de sessao.
+paths:
+  /chat/message:
+    post:
+      summary: Recebe mensagem de chat e devolve resposta multimodal com politica de cache para cliente
+      operationId: postChatMessageAndReturnResponse
+      tags:
+        - Chat
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                audio:
+                  type: string
+                  format: binary
+              description: Pelo menos um entre `text` e `audio` deve estar presente.
+      responses:
+        '200':
+          description: Resposta de chat processada com sucesso.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: Diretiva de cache para reuso da resposta em memoria no cliente durante a sessao.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatMessageResponse'
+              examples:
+                multimodal:
+                  value:
+                    status: completed
+                    responseId: rsp_123
+                    sessionId: ses_abc
+                    text: Aqui esta sua resposta
+                    audio:
+                      mimeType: audio/mpeg
+                      contentBase64: SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4LjI5LjEwMAAAAAAAAAAAAAAA
+                    cache:
+                      cacheable: true
+                      source: engine
+        '400':
+          description: Requisicao invalida ou resposta de upstream inconsistente.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: Deve impedir cache para erros (ex.: no-store).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatErrorResponse'
+        '502':
+          description: Falha de comunicacao com AI Engine.
+          headers:
+            Cache-Control:
+              schema:
+                type: string
+              description: Deve impedir cache para falhas de upstream.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatErrorResponse'
+components:
+  schemas:
+    ChatMessageResponse:
+      type: object
+      required:
+        - status
+        - responseId
+        - sessionId
+        - cache
+      properties:
+        status:
+          type: string
+          enum:
+            - completed
+        responseId:
+          type: string
+        sessionId:
+          type: string
+        text:
+          type: string
+          nullable: true
+        audio:
+          type: object
+          nullable: true
+          required:
+            - mimeType
+            - contentBase64
+          properties:
+            mimeType:
+              type: string
+            contentBase64:
+              type: string
+        cache:
+          type: object
+          required:
+            - cacheable
+            - source
+          properties:
+            cacheable:
+              type: boolean
+            source:
+              type: string
+              enum:
+                - engine
+                - client
+    ChatErrorResponse:
+      type: object
+      required:
+        - status
+        - reason
+      properties:
+        status:
+          type: string
+          enum:
+            - failed
+            - rejected
+        reason:
+          type: string
