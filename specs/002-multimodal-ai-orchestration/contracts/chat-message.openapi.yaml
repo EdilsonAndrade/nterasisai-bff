@@ -1,0 +1,103 @@
+openapi: 3.0.3
+info:
+  title: Interasis BFF Chat Message Contract
+  version: 1.0.0
+  description: Contrato publico para intake multimodal protegido pelo BFF antes do relay ao AI Engine.
+paths:
+  /chat/message:
+    post:
+      summary: Recebe uma mensagem multimodal e inicia o processamento protegido no BFF
+      operationId: postChatMessage
+      tags:
+        - Chat
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                text:
+                  type: string
+                  description: Conteudo textual opcional enviado pelo cliente.
+                audio:
+                  type: string
+                  format: binary
+                  description: Arquivo de audio opcional enviado pelo cliente.
+              description: Pelo menos um entre `text` e `audio` deve estar presente.
+      responses:
+        '200':
+          description: Solicitacao aceita e processada pelo fluxo do BFF.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatAcceptedResponse'
+              examples:
+                accepted:
+                  value:
+                    status: accepted
+                    correlationId: req_123
+                    message: Request accepted for processing.
+        '400':
+          description: Solicitacao invalida ou sem conteudo suportado.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatErrorResponse'
+              examples:
+                invalidPayload:
+                  value:
+                    status: rejected
+                    reason: Message must contain text, audio, or both.
+        '403':
+          description: Origem nao autorizada para uso da rota.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatErrorResponse'
+        '429':
+          description: Politica de trafego excedida.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatErrorResponse'
+        '502':
+          description: Falha operacional no relay para o AI Engine.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatErrorResponse'
+components:
+  schemas:
+    ChatAcceptedResponse:
+      type: object
+      required:
+        - status
+        - correlationId
+        - message
+      properties:
+        status:
+          type: string
+          enum:
+            - accepted
+        correlationId:
+          type: string
+          description: Identificador de rastreio da solicitacao no BFF.
+        message:
+          type: string
+          description: Indicacao textual de aceite do processamento.
+    ChatErrorResponse:
+      type: object
+      required:
+        - status
+        - reason
+      properties:
+        status:
+          type: string
+          enum:
+            - rejected
+            - blocked
+            - failed
+        reason:
+          type: string
+          description: Motivo legivel do bloqueio, rejeicao ou falha.

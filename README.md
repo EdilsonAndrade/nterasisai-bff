@@ -25,6 +25,46 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Chat Multimodal
+
+This BFF now exposes `POST /chat/message` to receive a text message, an audio file, or both.
+
+### Environment Variables
+
+- `FRONTEND_ALLOWED_ORIGINS`: Comma-separated list of allowed frontend origins. Example: `http://localhost:5173,http://localhost:3000`
+- `AI_ENGINE_URL`: Base URL for the internal AI Engine relay. Example: `http://localhost:8000`
+- `AI_ENGINE_INTERNAL_SECRET`: Internal secret sent by the BFF in the `X-Internal-Secret` header
+- `CHAT_THROTTLE_LIMIT` (optional): Max requests in throttle window. Default: `10`
+- `CHAT_THROTTLE_TTL_MS` (optional): Throttle window in milliseconds. Default: `60000`
+
+### Request Examples
+
+Text only:
+
+```bash
+curl -X POST http://localhost:3000/chat/message \
+  -H "Content-Type: application/json" \
+  -H "Origin: http://localhost:5173" \
+  -d '{"text":"hello"}'
+```
+
+Audio only:
+
+```bash
+curl -X POST http://localhost:3000/chat/message \
+  -H "Origin: http://localhost:5173" \
+  -F "audio=@voice.wav"
+```
+
+Text + audio:
+
+```bash
+curl -X POST http://localhost:3000/chat/message \
+  -H "Origin: http://localhost:5173" \
+  -F "text=please summarize" \
+  -F "audio=@voice.wav"
+```
+
 ## Project setup
 
 ```bash

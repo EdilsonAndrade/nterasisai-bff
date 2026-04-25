@@ -1,0 +1,95 @@
+openapi: 3.0.3
+info:
+  title: Interasis AI Engine Relay Contract
+  version: 1.0.0
+  description: Contrato interno versionado entre o BFF e o AI Engine para relay de mensagem multimodal.
+paths:
+  /internal/v1/chat/message:
+    post:
+      summary: Recebe do BFF uma solicitacao de mensagem validada para processamento no AI Engine
+      operationId: relayChatMessageToAIEngine
+      tags:
+        - AI Engine Internal
+      parameters:
+        - in: header
+          name: X-Internal-Secret
+          required: true
+          schema:
+            type: string
+          description: Credencial de confianca anexada exclusivamente pelo BFF.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AIEngineDispatchRequest'
+            examples:
+              textOnly:
+                value:
+                  requestId: req_123
+                  text: Olá, preciso de ajuda
+              multimodal:
+                value:
+                  requestId: req_124
+                  text: Transcreva e responda
+                  audio:
+                    fileName: message.wav
+                    mediaType: audio/wav
+                    contentBase64: UklGRl4AAABXQVZFZm10IBAAAAABAAEA
+      responses:
+        '200':
+          description: O AI Engine aceitou e processou a mensagem.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AIEngineDispatchResponse'
+        '401':
+          description: Credencial interna ausente ou invalida.
+        '422':
+          description: Payload validado pelo BFF mas rejeitado pelo contrato interno do AI Engine.
+        '503':
+          description: AI Engine indisponivel para processar a mensagem.
+components:
+  schemas:
+    AIEngineDispatchRequest:
+      type: object
+      required:
+        - requestId
+      properties:
+        requestId:
+          type: string
+        text:
+          type: string
+          description: Conteudo textual opcional normalizado pelo BFF.
+        audio:
+          type: object
+          required:
+            - fileName
+            - mediaType
+            - contentBase64
+          properties:
+            fileName:
+              type: string
+            mediaType:
+              type: string
+            contentBase64:
+              type: string
+              description: Conteudo do audio serializado para relay HTTP interno.
+      description: Pelo menos um entre `text` e `audio` deve estar presente.
+    AIEngineDispatchResponse:
+      type: object
+      required:
+        - status
+        - requestId
+      properties:
+        status:
+          type: string
+          enum:
+            - accepted
+            - completed
+        requestId:
+          type: string
+        output:
+          type: object
+          additionalProperties: true
+          description: Resposta do motor compativel com este slice, preservando evolucao futura para streaming.
