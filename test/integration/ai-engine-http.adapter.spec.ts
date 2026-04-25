@@ -5,7 +5,9 @@ import { AIEngineDispatchRequest } from '../../src/domain/entities';
 import { AIEngineConfig } from '../../src/infrastructure/config';
 
 describe('AIEngineHttpAdapter', () => {
-  const buildConfig = (partial: Partial<AIEngineConfig> = {}): AIEngineConfig => ({
+  const buildConfig = (
+    partial: Partial<AIEngineConfig> = {},
+  ): AIEngineConfig => ({
     baseUrl: 'http://ai-engine.test',
     internalSecret: 'server-internal-secret',
     allowedOrigins: ['http://allowed.test'],
@@ -63,9 +65,9 @@ describe('AIEngineHttpAdapter', () => {
   });
 
   it('maps relay failures to a generic adapter error', async () => {
-    const post = jest.fn().mockReturnValue(
-      throwError(() => new Error('connection refused')),
-    );
+    const post = jest
+      .fn()
+      .mockReturnValue(throwError(() => new Error('connection refused')));
 
     const adapter = new AIEngineHttpAdapter(
       { post } as unknown as HttpService,

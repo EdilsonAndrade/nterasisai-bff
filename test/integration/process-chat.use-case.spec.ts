@@ -31,7 +31,7 @@ describe('ProcessChatUseCase', () => {
     expect(result.correlationId).toBeDefined();
     expect(port.dispatchMessage).toHaveBeenCalledTimes(1);
 
-    const requestArg = port.dispatchMessage.mock.calls[0][0] as AIEngineDispatchRequest;
+    const requestArg = port.dispatchMessage.mock.calls[0][0];
     expect(requestArg.text).toBe('hello world');
     expect(requestArg.audioPayload?.fileName).toBe('voice.wav');
     expect(JSON.stringify(requestArg)).not.toContain('malicious-client-secret');

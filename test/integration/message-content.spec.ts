@@ -1,4 +1,7 @@
-import { MessageContent, MessageContentError } from '../../src/domain/value-objects';
+import {
+  MessageContent,
+  MessageContentError,
+} from '../../src/domain/value-objects';
 
 describe('MessageContent', () => {
   it('throws when both text and audio are missing', () => {

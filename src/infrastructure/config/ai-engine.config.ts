@@ -12,7 +12,10 @@ const DEFAULT_AI_ENGINE_URL = 'http://localhost:8000';
 const DEFAULT_CHAT_THROTTLE_LIMIT = 10;
 const DEFAULT_CHAT_THROTTLE_TTL_MS = 60_000;
 
-const parsePositiveNumber = (value: string | undefined, fallback: number): number => {
+const parsePositiveNumber = (
+  value: string | undefined,
+  fallback: number,
+): number => {
   if (!value) {
     return fallback;
   }

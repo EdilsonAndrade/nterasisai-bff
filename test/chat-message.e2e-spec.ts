@@ -52,7 +52,8 @@ describe('Chat message route (e2e)', () => {
   afterEach(async () => {
     await app.close();
     process.env.FRONTEND_ALLOWED_ORIGINS = originalEnv.FRONTEND_ALLOWED_ORIGINS;
-    process.env.AI_ENGINE_INTERNAL_SECRET = originalEnv.AI_ENGINE_INTERNAL_SECRET;
+    process.env.AI_ENGINE_INTERNAL_SECRET =
+      originalEnv.AI_ENGINE_INTERNAL_SECRET;
     process.env.AI_ENGINE_URL = originalEnv.AI_ENGINE_URL;
   });
 
@@ -79,7 +80,11 @@ describe('Chat message route (e2e)', () => {
 
   it('accepts audio-only payload', async () => {
     const formData = new FormData();
-    formData.append('audio', new Blob(['abc'], { type: 'audio/wav' }), 'voice.wav');
+    formData.append(
+      'audio',
+      new Blob(['abc'], { type: 'audio/wav' }),
+      'voice.wav',
+    );
 
     const response = await fetch(`${appUrl}/chat/message`, {
       method: 'POST',
@@ -96,7 +101,11 @@ describe('Chat message route (e2e)', () => {
   it('accepts payload with text and audio', async () => {
     const formData = new FormData();
     formData.append('text', 'hello');
-    formData.append('audio', new Blob(['abc'], { type: 'audio/wav' }), 'voice.wav');
+    formData.append(
+      'audio',
+      new Blob(['abc'], { type: 'audio/wav' }),
+      'voice.wav',
+    );
 
     const response = await fetch(`${appUrl}/chat/message`, {
       method: 'POST',

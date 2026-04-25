@@ -22,7 +22,9 @@ export class MessageContent {
     const hasAudio = Boolean(audioFile);
 
     if (!hasText && !hasAudio) {
-      throw new MessageContentError('Message must contain text, audio, or both.');
+      throw new MessageContentError(
+        'Message must contain text, audio, or both.',
+      );
     }
 
     return new MessageContent(cleanedText || undefined, audioFile);
