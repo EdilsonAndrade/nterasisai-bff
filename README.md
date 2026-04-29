@@ -31,36 +31,38 @@ This BFF now exposes `POST /chat/message` to receive a text message, an audio fi
 
 ### Environment Variables
 
-- `FRONTEND_ALLOWED_ORIGINS`: Comma-separated list of allowed frontend origins. Example: `http://localhost:5173,http://localhost:3000`
+- `FRONTEND_ALLOWED_ORIGINS`: Comma-separated list of allowed frontend origins. Example: `http://localhost:5173,http://localhost:3001`
 - `AI_ENGINE_URL`: Base URL for the internal AI Engine relay. Example: `http://localhost:8000`
 - `AI_ENGINE_INTERNAL_SECRET`: Internal secret sent by the BFF in the `X-Internal-Secret` header
 - `CHAT_THROTTLE_LIMIT` (optional): Max requests in throttle window. Default: `10`
 - `CHAT_THROTTLE_TTL_MS` (optional): Throttle window in milliseconds. Default: `60000`
+
+Do not send `AI_ENGINE_INTERNAL_SECRET` in public request bodies. The BFF reads it from the environment and forwards it to the AI Engine as `X-Internal-Secret`.
 
 ### Request Examples
 
 Text only:
 
 ```bash
-curl -X POST http://localhost:3000/chat/message \
+curl -X POST http://localhost:3001/chat/message \
   -H "Content-Type: application/json" \
-  -H "Origin: http://localhost:5173" \
+  -H "Origin: http://localhost:3001" \
   -d '{"text":"hello"}'
 ```
 
 Audio only:
 
 ```bash
-curl -X POST http://localhost:3000/chat/message \
-  -H "Origin: http://localhost:5173" \
+curl -X POST http://localhost:3001/chat/message \
+  -H "Origin: http://localhost:3001" \
   -F "audio=@voice.wav"
 ```
 
 Text + audio:
 
 ```bash
-curl -X POST http://localhost:3000/chat/message \
-  -H "Origin: http://localhost:5173" \
+curl -X POST http://localhost:3001/chat/message \
+  -H "Origin: http://localhost:3001" \
   -F "text=please summarize" \
   -F "audio=@voice.wav"
 ```

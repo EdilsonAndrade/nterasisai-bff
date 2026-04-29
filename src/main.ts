@@ -1,9 +1,39 @@
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { OpenAPIObject } from '@nestjs/swagger';
+import type { CustomOrigin } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { AppModule } from './app.module';
 import { loadAIEngineConfig, isOriginAllowed } from './infrastructure/config';
+import {
+  chatJsonRequestExamples,
+  chatJsonRequestSchema,
+  chatMultipartRequestSchema,
+  chatRequestBodyDescription,
+} from './presentation/controllers/chat.swagger';
 
 export const SWAGGER_DOCS_PATH = 'api/docs';
+
+function setChatMessageRequestBody(document: OpenAPIObject) {
+  const chatMessageOperation = document.paths['/chat/message']?.post;
+
+  if (!chatMessageOperation) {
+    return;
+  }
+
+  chatMessageOperation.requestBody = {
+    required: true,
+    description: chatRequestBodyDescription,
+    content: {
+      'application/json': {
+        schema: chatJsonRequestSchema,
+        examples: chatJsonRequestExamples,
+      },
+      'multipart/form-data': {
+        schema: chatMultipartRequestSchema,
+      },
+    },
+  };
+}
 
 export function setupSwagger(app: Parameters<typeof SwaggerModule.setup>[1]) {
   const config = new DocumentBuilder()
@@ -20,27 +50,29 @@ export function setupSwagger(app: Parameters<typeof SwaggerModule.setup>[1]) {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
+  setChatMessageRequestBody(document);
   SwaggerModule.setup(SWAGGER_DOCS_PATH, app, document);
 }
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const aiConfig = loadAIEngineConfig();
+  const corsOrigin: CustomOrigin = (origin, callback) => {
+    if (!origin) {
+      callback(null, false);
+      return;
+    }
+
+    if (isOriginAllowed(origin, aiConfig.allowedOrigins)) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error('Origin is not allowed by CORS'));
+  };
 
   app.enableCors({
-    origin: (origin, callback) => {
-      if (!origin) {
-        callback(null, false);
-        return;
-      }
-
-      if (isOriginAllowed(origin, aiConfig.allowedOrigins)) {
-        callback(null, true);
-        return;
-      }
-
-      callback(new Error('Origin is not allowed by CORS'));
-    },
+    origin: corsOrigin,
     credentials: true,
   });
 

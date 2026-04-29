@@ -51,4 +51,42 @@ describe('Swagger documentation (e2e)', () => {
     const tagNames = (document.tags ?? []).map((tag) => tag.name);
     expect(tagNames).toEqual(expect.arrayContaining(['Health', 'Chat']));
   });
+
+  it('documents JSON chat payload with primitive string fields', async () => {
+    const response = await fetch(`${appUrl}/api/docs-json`);
+    const document = (await response.json()) as Record<string, unknown> & {
+      paths: {
+        '/chat/message': {
+          post: {
+            requestBody: {
+              content: Record<
+                string,
+                {
+                  schema: {
+                    properties: Record<string, Record<string, unknown>>;
+                  };
+                  examples?: Record<string, { value: Record<string, unknown> }>;
+                }
+              >;
+            };
+          };
+        };
+      };
+    };
+
+    const jsonContent =
+      document.paths['/chat/message'].post.requestBody.content[
+        'application/json'
+      ];
+
+    expect(jsonContent.schema.properties.text).toMatchObject({
+      type: 'string',
+      maxLength: 4000,
+    });
+    expect(jsonContent.schema.properties.internalSecret).toBeUndefined();
+    expect(jsonContent.schema.properties.audio).toBeUndefined();
+    expect(jsonContent.examples?.textOnly.value).toEqual({
+      text: 'Ola, pode me ajudar a contratar uma proposta?',
+    });
+  });
 });

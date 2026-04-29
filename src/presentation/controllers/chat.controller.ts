@@ -36,6 +36,11 @@ import { ProcessChatUseCase } from '../../application/use-cases';
 import type { UploadedAudioFile } from '../../domain/entities';
 import { AI_ENGINE_CONFIG, isOriginAllowed } from '../../infrastructure/config';
 import type { AIEngineConfig } from '../../infrastructure/config';
+import {
+  chatJsonRequestExamples,
+  chatJsonRequestSchema,
+  chatRequestBodyDescription,
+} from './chat.swagger';
 import { ChatThrottlerExceptionFilter } from './chat-throttler-exception.filter';
 
 type MulterFile = {
@@ -62,33 +67,11 @@ export class ChatController {
     description:
       'Encaminha texto e/ou audio do usuario para o AI Engine, validando origem, autenticacao interna e limites de uso.',
   })
-  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiConsumes('application/json', 'multipart/form-data')
   @ApiBody({
-    description:
-      'Payload do chat. Pode ser enviado como JSON (`application/json`) com `text`/`internalSecret` ou como `multipart/form-data` incluindo um arquivo de audio no campo `audio`.',
-    schema: {
-      type: 'object',
-      properties: {
-        text: {
-          type: 'string',
-          maxLength: 4000,
-          description:
-            'Conteudo textual da mensagem do usuario. Pelo menos um entre `text` ou `audio` deve ser informado.',
-          example: 'Ola, pode me ajudar a contratar uma proposta?',
-        },
-        audio: {
-          type: 'string',
-          format: 'binary',
-          description:
-            'Arquivo de audio multipart com a mensagem falada do usuario.',
-        },
-        internalSecret: {
-          type: 'string',
-          description:
-            'Segredo interno opcional usado por chamadas servidor-a-servidor; clientes finais nao devem informar.',
-        },
-      },
-    },
+    description: chatRequestBodyDescription,
+    schema: chatJsonRequestSchema,
+    examples: chatJsonRequestExamples,
   })
   @ApiOkResponse({
     description: 'Mensagem aceita e encaminhada ao AI Engine.',
@@ -129,6 +112,11 @@ export class ChatController {
     @Headers('origin') origin: string | undefined,
     @Res({ passthrough: true }) response: Response,
   ): Promise<ProcessChatResponseDto> {
+    console.log('Received chat message request', {
+      text: body.text,
+      hasAudio: !!uploadedFile,
+      origin,
+    });
     if (!isOriginAllowed(origin, this.aiEngineConfig.allowedOrigins)) {
       response.status(HttpStatus.FORBIDDEN);
       return {

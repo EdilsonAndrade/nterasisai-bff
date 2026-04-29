@@ -27,8 +27,13 @@ describe('AIEngineHttpAdapter', () => {
     const post = jest.fn().mockReturnValue(
       of({
         data: {
-          status: 'accepted',
-          requestId: 'req_1',
+          status: 'success',
+          message: {
+            text: 'processed',
+          },
+          metadata: {
+            request_id: 'engine_req_1',
+          },
         },
       }),
     );
@@ -38,19 +43,28 @@ describe('AIEngineHttpAdapter', () => {
       buildConfig(),
     );
 
-    await adapter.dispatchMessage(buildRequest());
+    const result = await adapter.dispatchMessage(buildRequest());
 
     expect(post).toHaveBeenCalledWith(
-      'http://ai-engine.test/internal/v1/chat/message',
-      expect.objectContaining({
-        requestId: 'req_1',
-      }),
+      'http://ai-engine.test/api/v1/chat/process',
+      expect.any(FormData),
       expect.objectContaining({
         headers: {
           'X-Internal-Secret': 'server-internal-secret',
         },
       }),
     );
+
+    const formData = post.mock.calls[0][1] as FormData;
+    expect(formData.get('text')).toBe('hello');
+    expect(formData.get('audio')).toBeInstanceOf(Blob);
+    expect(result).toEqual({
+      status: 'completed',
+      requestId: 'engine_req_1',
+      output: expect.objectContaining({
+        status: 'success',
+      }),
+    });
   });
 
   it('throws when internal secret is not configured', async () => {

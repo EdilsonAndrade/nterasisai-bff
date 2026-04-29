@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { HttpModule } from '@nestjs/axios';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ProcessChatUseCase } from './application/use-cases';
@@ -12,6 +13,9 @@ import { ChatController, HealthController } from './presentation/controllers';
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     HttpModule,
     ThrottlerModule.forRoot([
       {
