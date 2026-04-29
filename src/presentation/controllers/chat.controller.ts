@@ -15,8 +15,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { memoryStorage } from 'multer';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
   ApiBadGatewayResponse,
@@ -34,13 +33,16 @@ import {
   ProcessChatResponseDto,
 } from '../../application/dto';
 import { ProcessChatUseCase } from '../../application/use-cases';
-import { UploadedAudioFile } from '../../domain/entities';
-import {
-  AI_ENGINE_CONFIG,
-  AIEngineConfig,
-  isOriginAllowed,
-} from '../../infrastructure/config';
+import type { UploadedAudioFile } from '../../domain/entities';
+import { AI_ENGINE_CONFIG, isOriginAllowed } from '../../infrastructure/config';
+import type { AIEngineConfig } from '../../infrastructure/config';
 import { ChatThrottlerExceptionFilter } from './chat-throttler-exception.filter';
+
+type MulterFile = {
+  originalname: string;
+  mimetype: string;
+  buffer: Buffer;
+};
 
 @ApiTags('Chat')
 @Controller('chat')
@@ -113,11 +115,7 @@ export class ChatController {
       ttl: 60_000,
     },
   })
-  @UseInterceptors(
-    FileInterceptor('audio', {
-      storage: memoryStorage(),
-    }),
-  )
+  @UseInterceptors(FileInterceptor('audio'))
   @UsePipes(
     new ValidationPipe({
       transform: true,
@@ -127,7 +125,7 @@ export class ChatController {
   )
   async message(
     @Body() body: ProcessChatRequestDto,
-    @UploadedFile() uploadedFile: Express.Multer.File | undefined,
+    @UploadedFile() uploadedFile: MulterFile | undefined,
     @Headers('origin') origin: string | undefined,
     @Res({ passthrough: true }) response: Response,
   ): Promise<ProcessChatResponseDto> {
@@ -159,7 +157,7 @@ export class ChatController {
   }
 
   private toUploadedAudio(
-    file: Express.Multer.File | undefined,
+    file: MulterFile | undefined,
   ): UploadedAudioFile | undefined {
     if (!file) {
       return undefined;

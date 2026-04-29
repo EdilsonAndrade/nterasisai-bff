@@ -1,9 +1,10 @@
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
-import { AIEngineDispatchRequest } from '../../domain/entities';
-import { AIEnginePort, AIEngineRelayResponse } from '../../domain/ports';
-import { AI_ENGINE_CONFIG, AIEngineConfig } from '../config';
+import type { AIEngineDispatchRequest } from '../../domain/entities';
+import type { AIEnginePort, AIEngineRelayResponse } from '../../domain/ports';
+import { AI_ENGINE_CONFIG } from '../config';
+import type { AIEngineConfig } from '../config';
 
 @Injectable()
 export class AIEngineHttpAdapter implements AIEnginePort {

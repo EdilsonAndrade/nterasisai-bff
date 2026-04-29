@@ -5,7 +5,8 @@ import {
   ChatDispatchResult,
   UploadedAudioFile,
 } from '../../domain/entities';
-import { AI_ENGINE_PORT, AIEnginePort } from '../../domain/ports';
+import { AI_ENGINE_PORT } from '../../domain/ports';
+import type { AIEnginePort } from '../../domain/ports';
 import {
   MessageContent,
   MessageContentError,
